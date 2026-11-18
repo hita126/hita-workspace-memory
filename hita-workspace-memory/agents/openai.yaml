@@ -1,0 +1,4 @@
+interface:
+  display_name: "Hita Workspace Memory"
+  short_description: "按项目路由和写入 hita_workspace 记忆"
+  default_prompt: "Use $hita-workspace-memory to route a project task through hita_workspace before reading current files."

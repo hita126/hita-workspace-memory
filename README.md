@@ -1,157 +1,69 @@
-# Hita-Mind & Knowledge
+# hita-workspace-memory
 
-> AI Agent 记忆与知识管理系统，让 AI 拥有"记忆"和"知识"
+> 让 AI agent 记住你：一个项目，一份索引；开工前，先读索引；新的记忆，自动写进对应文件。
 
-## Introduction
+A file-based project memory skill for **Claude Code** and **Codex**. The skill holds no facts; it routes the agent: read the right project files before working, write each new memory to the right file when you say 「记一下」.
 
-**Hita-Mind & Knowledge** is an AI Agent skill kit developed by hita, containing two complementary modules:
+## 它是怎么来的
 
-| Module | Purpose | Stores |
-|--------|---------|--------|
-| **Mind Module** | AI's Memory | Preferences, decisions, lessons, habits |
-| **Knowledge Manager** | AI's Knowledge | Tips, methods, rules, experiences |
+| 版本 | 做法 | 问题 |
+|---|---|---|
+| v0 | 直接用 OpenClaw，靠对话上下文 | 换个对话就忘，写在记忆里的教训也不去查 |
+| v1（`legacy/`） | 两个 skill：**hita-mind-module** 管记什么（8 类抽屉），**hita-knowledge-manager** 管记多少（热 / 温 / 冷三层） | 项目一多，所有东西挤在同一个地方，写项目 A 的周报会混进项目 B 的数字 |
+| **v2（现在）** | **hita-workspace-memory**：合成一个 skill，按项目路由 | — |
 
-## Structure
+## 它像一栋楼
 
 ```
-Hita-Mind & Knowledge/
-├── README.md
-├── LICENSE
-├── package.json
-├── hita-mind-module/          # Mind Module (8 categories)
-│   ├── SKILL.md
-│   ├── index.js
-│   ├── memory-store.json
-│   └── README.md
-└── hita-knowledge-manager/   # Knowledge Manager (3-tier system)
-    ├── SKILL.md
-    ├── index.js
-    ├── knowledge-manager.js
-    ├── knowledge-store.json
-    └── README.md
+工作区/
+├── 工作区索引.md          ← 大厅：有哪些项目、触发词、去哪找
+├── memory/                ← 公共区：跨项目都成立的东西
+│   ├── 通用工作流程规则.md
+│   ├── 用户长期偏好.md
+│   ├── 长期决策.md
+│   └── 纠错反馈.md        ← 被纠正过的错误，下次开工先读
+└── projects/
+    └── 项目A/             ← 一个项目，一个房间
+        ├── 项目卡.md      ← 这个项目是什么、开工按什么顺序读
+        ├── 项目记忆.md    ← 稳定事实、业务背景、已确认的误报
+        ├── 周期摘要.md    ← 每期的数字和结论
+        ├── 报告规则.md    ← 交付格式、被改过的措辞
+        └── 文件索引.md    ← 原始资料在哪（只记路径，不复制原件）
 ```
 
-## Quick Start
+- **读**：先问是哪个项目 → 读 `项目卡.md` → 按需要读项目记忆、周期摘要、报告规则；用记忆之前先核对它是不是过期了。
+- **写**：说一句「记一下」，agent 自己判断放哪：项目的事放进项目房间，通用经验放公共区，被纠正过的写进纠错反馈；写之前先查重，有就合并。
+- **安全**：密码、密钥、Token 只记位置，不记内容。
 
-### Installation
+## 安装
 
-```bash
-# Mind Module
-cd hita-mind-module && npm install
+1. 把 `hita-workspace-memory/` 复制到 skill 目录：
+   - Claude Code：`~/.claude/skills/hita-workspace-memory/`
+   - Codex：`~/.codex/skills/hita-workspace-memory/`
+2. 把 `hita-workspace-memory/templates/workspace/` 复制成你的工作区，默认位置是 `~/.codex/hita_workspace`（两个 agent 可以共用同一个工作区）。放在别处的话，改 `SKILL.md` 里的那一行路径。
+3. 在 `工作区索引.md` 里登记你的项目，照 `projects/示例项目/` 建项目文件夹。
 
-# Knowledge Manager
-cd hita-knowledge-manager && npm install
+## 怎么用
+
+```text
+帮我写项目 A 这周的周报              → 先读索引和项目 A 的项目卡，再按报告规则写
+记一下：项目 A 的报告不要用「高危」这个词  → 写进 projects/项目A/报告规则.md
+记一下：以后交付都先给结论            → 写进 memory/用户长期偏好.md
+你上次把 B 的数字写进 A 了，记一下    → 写进 memory/纠错反馈.md
 ```
 
-### Usage Examples
+## 和 v1 的区别
 
-**Mind Module**
-```bash
-cd hita-mind-module
-node index.js add preferences "叫用户" "叫老板"
-node index.js search 工作习惯
-node index.js context patterns 5
-```
+| | v1 两个 skill | v2 hita-workspace-memory |
+|---|---|---|
+| 存储 | 一个 JSON 文件 | 按项目分的 Markdown 文件，人也能直接读、改 |
+| 分类 | 8 类 + 热温冷三层，平铺 | 按项目路由，项目内五个文件 |
+| 读取 | 需要时再查 | 开工前按顺序读，读之前核对是否过期 |
+| 写入 | 手动调用 `node index.js add` | 说「记一下」自动归位，先查重 |
+| 运行 | Node.js 脚本 | 纯 skill，无依赖 |
 
-**Knowledge Manager**
-```bash
-cd hita-knowledge-manager
-node index.js add "冰箱除异味" "放一杯小苏打在冰箱里" "生活技巧"
-node index.js search 冰箱
-node index.js context 10
-```
-
-## Module Details
-
-### Mind Module
-
-AI memory system based on 8 categories.
-
-**8 Categories:**
-- decisions — Technical choices, important decisions
-- preferences — Communication style, work habits
-- patterns — Work templates, analysis processes
-- causality — Problem root causes, lessons learned
-- contacts — Names, contacts
-- feedback — User corrections, feedback
-- projects — Specific tasks, project data
-- daily — Daily work logs
-
-### Knowledge Manager
-
-3-tier knowledge base system (L1/L2/L3) with smart tiering.
-
-**3-Tier Architecture:**
-- L1 (Hot): Full content, 50 items max, demoted after 30 days unused
-- L2 (Warm): Summary + tags, 200 items max, demoted after 90 days unused
-- L3 (Cold): Metadata index only, unlimited
-
-## Use Cases / 使用场景
-
-### Mind Module Use Cases
-
-**【场景1】新任务接手 / New Task Handover**
-```
-用户交代新任务 → AI 先查 memory/daily 和 memory/projects → 了解背景再开始
-User assigns a new task → AI checks memory/daily and memory/projects → Understand context before starting
-```
-
-**【场景2】用户偏好记住 / Remembering User Preferences**
-```
-用户说"以后开会纪要这样写" → AI 自动存到 preferences
-User says "Write meeting notes this way from now on" → AI saves to preferences automatically
-```
-
-**【场景3】踩坑后记教训 / Learn from Mistakes**
-```
-任务出错被纠正 → 自动记到 causality，下次不再犯
-Task fails and gets corrected → Automatically saved to causality, won't repeat
-```
-
-**【场景4】项目经验积累 / Project Experience Accumulation**
-```
-完成一个项目 → 存到 projects，下次遇到类似直接调用
-Complete a project → Save to projects, invoke directly for similar tasks next time
-```
-
-### Knowledge Manager Use Cases
-
-**【场景1】工具使用技巧 / Tool Usage Tips**
-```
-学会了一个 Vim 骚操作 → 存到 L1 热数据，随时能查
-Learn a cool Vim trick → Save to L1 hot data, available anytime
-```
-
-**【场景2】故障排除记录 / Troubleshooting Records**
-```
-修了一个 bug → 存到知识库，下次遇到同类问题 5 分钟解决
-Fix a bug → Save to knowledge base, solve similar issues in 5 minutes next time
-```
-
-**【场景3】团队规范沉淀 / Team Norms Documentation**
-```
-团队定了一个流程 → 存到 L2，新人来了也能看懂
-Team sets a process → Save to L2, even newcomers can understand
-```
-
-**【场景4】冷知识归档 / Cold Knowledge Archiving**
-```
-不常用的配置命令 → L3 冷数据，只留索引，需要时再翻出来
-Rarely used config commands → L3 cold data, index only, retrieve when needed
-```
-
-## Technical Details
-
-- **Language**: JavaScript (Node.js >= 14)
-- **Dependencies**: None, pure native implementation
-- **Storage**: JSON files, no database required
-- **Deployment**: Plug and play, modify `*-store.json` to customize
-
-## Applicable Frameworks
-
-- OpenClaw
-- Other Node.js AI Agent frameworks
+v1 的代码保留在 [`legacy/`](legacy/)。
 
 ## License
 
-MIT License - Developed by **hita**
+MIT © hita
